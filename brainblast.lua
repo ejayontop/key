@@ -2081,7 +2081,7 @@ end)
 
 local AutoFirst = addBox(autoLeft, 1)
 addSectionLabel(AutoFirst , "AUTOMATION",2)
-addChaseSpeedSlider(settingsPlayer, 2)
+addChaseSpeedSlider(AutoFirst, 2)
 addToggle(AutoFirst, "Auto Farm", 2, false, function(state)
 	  TogglePerfectBlast(state)
     toggleAutoAll(state)

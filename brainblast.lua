@@ -110,7 +110,7 @@ local DEFAULT_HEIGHT = 340
 -- =============================================================================
 -- HEADER INFO (small, easy to update for dev/version tracking)
 -- =============================================================================
-local VERSION_TEXT = "v1.1.0" -- bump this on every release
+local VERSION_TEXT = "v1.1.1111" -- bump this on every release
 local DISCORD_INVITE = "discord.gg/GZmXAVh6zb" -- shown as a copyable string in the header
 
 local GAME_NAME

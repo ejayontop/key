@@ -1123,22 +1123,31 @@ task.spawn(function()
         end
     end
 end)
+-- =============================================================================
+-- AUTOMATION & CONTROLLERS (Separate Walk Speed & Chase Speed)
+-- =============================================================================
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
-local function toggleAutoAll(state)
+local ChaseSpeedController = {
+    Speed = 500, -- Default high physics speed for chase
+    Thread = nil
+}
+
+function ChaseSpeedController:Toggle(state)
     _G.autoAllEnabled = state
+    local StarterGui = game:GetService("StarterGui")
+
     if _G.autoAllEnabled then
         pcall(function() TeleportUtils.ToLobby() end)
         
-        -- Combined into a single task.spawn loop handling HUD clicks, auto-running, and chase logic
-        task.spawn(function()
+        self.Thread = task.spawn(function()
             local hud = player:WaitForChild("PlayerGui"):WaitForChild("HUD", 10)
             local wasInChase = false
-            local customSpeed = 500
             
             while _G.autoAllEnabled do
                 -- 1. BlastButton Clicker
@@ -1172,7 +1181,7 @@ local function toggleAutoAll(state)
                     end
                 end
 
-                -- 3. Chase Handling & Auto-Run
+                -- 3. Chase Handling & Auto-Run using Chase Speed
                 local currentInChase = (player:GetAttribute("InChase") == true)
                 
                 if currentInChase and not wasInChase then
@@ -1192,17 +1201,16 @@ local function toggleAutoAll(state)
                             end
                             
                             local lookVector = rootPart.CFrame.LookVector
-                            local targetVelocity = lookVector * customSpeed
+                            local targetVelocity = lookVector * ChaseSpeedController.Speed
                             rootPart.AssemblyLinearVelocity = Vector3.new(targetVelocity.X, rootPart.AssemblyLinearVelocity.Y, targetVelocity.Z)
                         end)
                         
                         while _G.autoAllEnabled and player:GetAttribute("InChase") == true and character.Parent do
                             task.wait(0.1)
                             local Event = game:GetService("ReplicatedStorage").Remotes.Zombie.ZombieResult
-firesignal(Event.OnClientEvent, 
-    true
-)
-print("Done fire remote")
+                            pcall(function()
+                                firesignal(Event.OnClientEvent, true)
+                            end)
                         end
                         
                         if moveConnection then
@@ -1224,7 +1232,76 @@ print("Done fire remote")
                 task.wait(0.1)
             end
         end)
+    else
+        _G.autoAllEnabled = false
+        if self.Thread then
+            task.cancel(self.Thread)
+            self.Thread = nil
+        end
     end
+end
+
+-- =============================================================================
+-- 2. CHASE SPEED SLIDER (Controls Active Physics Chase Speed)
+-- =============================================================================
+local function addChaseSpeedSlider(page, order)
+    local DEFAULT_SPEED = 500
+    local MAX_SPEED = 1000
+    
+    local sliderBg = Instance.new("Frame", page)
+    sliderBg.Name = "ChaseSpeedSlider"
+    sliderBg.LayoutOrder = order
+    sliderBg.Size = UDim2.new(1, 0, 0, 50)
+    sliderBg.BackgroundColor3 = Colors.CardBg
+    Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(0, 8)
+    
+    local label = Instance.new("TextLabel", sliderBg)
+    label.Size = UDim2.new(1, -20, 0, 20)
+    label.Position = UDim2.new(0, 14, 0, 8)
+    label.BackgroundTransparency = 1
+    label.Text = "Chase Speed: " .. DEFAULT_SPEED
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextColor3 = Colors.TextWhite
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local bar = Instance.new("Frame", sliderBg)
+    bar.Size = UDim2.new(1, -28, 0, 4)
+    bar.Position = UDim2.new(0, 14, 0, 35)
+    bar.BackgroundColor3 = Colors.Separator
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+
+    local fill = Instance.new("Frame", bar)
+    fill.Size = UDim2.new((DEFAULT_SPEED / MAX_SPEED), 0, 1, 0)
+    fill.BackgroundColor3 = Colors.Accent
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+    local btn = Instance.new("TextButton", bar)
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+
+    local function updateSpeed(input)
+        local relativeX = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+        local newSpeed = math.floor(relativeX * MAX_SPEED)
+        if newSpeed < 10 then newSpeed = 10 end
+        
+        fill.Size = UDim2.new(relativeX, 0, 1, 0)
+        label.Text = "Chase Speed: " .. newSpeed
+        
+        ChaseSpeedController.Speed = newSpeed
+    end
+
+    btn.MouseButton1Down:Connect(function()
+        local conn
+        conn = RunService.RenderStepped:Connect(function()
+            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                updateSpeed({Position = UserInputService:GetMouseLocation()})
+            else
+                conn:Disconnect()
+            end
+        end)
+    end)
 end
 
 local function toggleAutoRebirth(state)
@@ -2004,6 +2081,7 @@ end)
 
 local AutoFirst = addBox(autoLeft, 1)
 addSectionLabel(AutoFirst , "AUTOMATION",2)
+addChaseSpeedSlider(settingsPlayer, 2)
 addToggle(AutoFirst, "Auto Farm", 2, false, function(state)
 	  TogglePerfectBlast(state)
     toggleAutoAll(state)
@@ -2123,7 +2201,7 @@ end)
 -- ===== Settings: RIGHT column =====
 local settingsAboutBox = addBox(settingsRight, 1)
 addSectionLabel(settingsAboutBox, "ABOUT", 1)
-addStatCard(settingsAboutBox, "VERSION", "1.1.0", 2)
+addStatCard(settingsAboutBox, "VERSION", "1.1.1", 2)
 
 tabButtons["Dashboard"].button.MouseButton1Click:Connect(function() switchTab("Dashboard") end)
 tabButtons["Auto"].button.MouseButton1Click:Connect(function() switchTab("Auto") end)

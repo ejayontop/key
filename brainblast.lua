@@ -1220,7 +1220,7 @@ function ChaseSpeedController:Toggle(state)
                 end
                 
                 if wasInChase and not currentInChase then
-                    task.wait(8)
+                    task.wait(4)
                     wasInChase = false
                     pcall(function()
                         TeleportUtils.ToLobby()
@@ -2078,16 +2078,17 @@ addToggle(dashActionsBoxR, "Auto Claim Pass", 6, false, function(state)
     toggleAutoClaimPass(state)
 end)
 
-
-local AutoFirst = addBox(autoLeft, 1)
-addSectionLabel(AutoFirst , "AUTOMATION",2)
-addChaseSpeedSlider(AutoFirst, 2)
-addToggle(AutoFirst, "Auto Farm", 2, false, function(state)
+local AutoFirst1 = addBox(autoLeft, 1)
+addSectionLabel(AutoFirst1 , "AUTO FARM",2)
+addChaseSpeedSlider(AutoFirst1, 2)
+addToggle(AutoFirst1, "Auto Farm", 2, false, function(state)
 	  TogglePerfectBlast(state)
     ChaseSpeedController:Toggle(state)
   
 end)
 
+local AutoFirst = addBox(autoLeft, 2)
+addSectionLabel(AutoFirst, "AUTOMATION",2)
 addToggle(AutoFirst, "Auto Fast Train Brain", 4, false, function(state)
     handleEquipBook(state)
     ToggleAutoTap2x(state)
@@ -2104,7 +2105,7 @@ end)
 --addToggle(autoPage, "Auto Collect Cash V2", 7, false, function(state)
     --toggleAutoCollectCash(state)
 --end)
-local AutoSecond = addBox(autoLeft, 2)
+local AutoSecond = addBox(autoLeft, 3)
 addSectionLabel(AutoSecond , "UPGRADES",2)
 addToggle(AutoSecond, "Auto Upgrade Brainrot", 7, false, function(state)
     AutoUpgradeBrainrot:Toggle(state)

@@ -110,7 +110,7 @@ local DEFAULT_HEIGHT = 340
 -- =============================================================================
 -- HEADER INFO (small, easy to update for dev/version tracking)
 -- =============================================================================
-local VERSION_TEXT = "v1.1.1" -- bump this on every release
+local VERSION_TEXT = "v1.69.69" -- bump this on every release
 local DISCORD_INVITE = "discord.gg/GZmXAVh6zb" -- shown as a copyable string in the header
 
 local GAME_NAME
@@ -1220,7 +1220,7 @@ function ChaseSpeedController:Toggle(state)
                 end
                 
                 if wasInChase and not currentInChase then
-                    task.wait(4)
+                    task.wait(5)
                     wasInChase = false
                     pcall(function()
                         TeleportUtils.ToLobby()
@@ -2084,7 +2084,7 @@ addChaseSpeedSlider(AutoFirst1, 2)
 addToggle(AutoFirst1, "Auto Farm", 2, false, function(state)
 	  TogglePerfectBlast(state)
     ChaseSpeedController:Toggle(state)
-  
+    setNoclip(state)
 end)
 
 local AutoFirst = addBox(autoLeft, 2)
@@ -2095,13 +2095,15 @@ addToggle(AutoFirst, "Auto Fast Train Brain", 4, false, function(state)
 end)
 
 
-addToggle(AutoFirst, "Auto TP Training Zone", 4, false, function(state)
-    AutoTrainingTeleport:Toggle(state)
-end)
 
-addToggle(AutoFirst, "Auto Collect Cash", 6, false, function(state)
+
+addToggle(AutoFirst, "Auto Collect Cash", 5, false, function(state)
     toggleAutoPlaceBest(state)
 end)
+
+--addToggle(AutoFirst, "Auto TP Training Zone", 7, false, function(state)
+  --  AutoTrainingTeleport:Toggle(state)
+--end)
 --addToggle(autoPage, "Auto Collect Cash V2", 7, false, function(state)
     --toggleAutoCollectCash(state)
 --end)

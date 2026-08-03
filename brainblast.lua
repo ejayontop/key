@@ -1110,15 +1110,13 @@ local function toggleAutoAll(state)
     _G.autoAllEnabled = state
     if _G.autoAllEnabled then
         pcall(function() TeleportUtils.ToLobby() end)
-        	
         
         -- Main Automation Thread (BlastButton & DropOpen)
         task.spawn(function()
             local hud = player:WaitForChild("PlayerGui"):WaitForChild("HUD", 10)
-          
+            
             while _G.autoAllEnabled do
                 -- 1. Check & Click BlastButton
-                   player:SetAttribute("DropOpen", true)
                 if hud then
                     local blastFrame = hud:FindFirstChild("BlastFrame")
                     local blastButton = blastFrame and blastFrame:FindFirstChild("BlastButton")
@@ -1136,9 +1134,9 @@ local function toggleAutoAll(state)
                 end
                 
                 -- 2. Manage DropOpen State
-                
-                   
-                
+                if player:GetAttribute("DropOpen") == false then
+                    player:SetAttribute("DropOpen", true)
+                end
 
                 while player:GetAttribute("DropOpen") == true and _G.autoAllEnabled do
                     local camera = Workspace.CurrentCamera
@@ -1154,8 +1152,8 @@ local function toggleAutoAll(state)
             end
         end)
 
-        -- Separate Chase Handling Thread (Simulates natural W key / Analog movement & tracks state transition)
-      spawn(function()
+        -- Universal Cross-Platform Chase Handling Thread (Works for Mobile & PC)
+        task.spawn(function()
             local wasInChase = false
             
             while _G.autoAllEnabled do
@@ -1164,17 +1162,13 @@ local function toggleAutoAll(state)
                 
                 -- Detect when chase starts
                 if currentInChase and not wasInChase then
-                	
                     wasInChase = true
                     local character = player.Character
                     local humanoid = character and character:FindFirstChild("Humanoid")
                     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
                     
                     if humanoid and rootPart then
-                        -- Press down 'W' key virtually so the engine registers physical walking
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.W, false, game)
-                        
-                        -- Backup physics loop using Humanoid:Move to guarantee forward motion
+                        -- Physics loop using Humanoid:Move for universal mobile analog / PC movement simulation
                         local moveConnection
                         moveConnection = RunService.RenderStepped:Connect(function()
                             if not character or not humanoid or humanoid.Health <= 0 or player:GetAttribute("InChase") ~= true or not _G.autoAllEnabled then
@@ -1183,18 +1177,16 @@ local function toggleAutoAll(state)
                                 end
                                 return
                             end
-                            -- Forces continuous forward motion vector
+                            -- Forces continuous forward motion relative to character orientation/camera
                             humanoid:Move(Vector3.new(0, 0, -1), true)
                         end)
                         
-                        -- Keep walking while InChase remains true
+                        -- Keep moving while InChase remains true
                         while player:GetAttribute("InChase") == true and character.Parent and _G.autoAllEnabled do
                             task.wait(0.1)
                         end
                         
-                        -- Release 'W' key and cleanup when chase ends
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.W, false, game)
-                        
+                        -- Cleanup motion when chase ends
                         if moveConnection then
                             moveConnection:Disconnect()
                         end
@@ -1207,13 +1199,15 @@ local function toggleAutoAll(state)
                 
                 -- Detect when chase was active before, but is now finished/inactive
                 if wasInChase and not currentInChase then
-                   
-                	task.wait(8)
+                    task.wait(8)
                     wasInChase = false
-                    TeleportUtils.ToLobby()
-                    TeleportUtils.ToWin()
-                    TeleportUtils.ToLobby()
+                    pcall(function()
+                        TeleportUtils.ToLobby()
+                        TeleportUtils.ToWin()
+                        TeleportUtils.ToLobby()
+                    end)
                 end
+                
                 task.wait(0.5)
             end
         end)
